@@ -41,10 +41,19 @@ class OrientationEstimator:
         self.left_eye_outer_idx = 33
         self.right_eye_inner_idx = 362
         self.right_eye_outer_idx = 263
+        
+        # Eye vertical landmarks (for detecting closed eyes)
+        self.left_eye_top_idx = 159
+        self.left_eye_bottom_idx = 145
+        self.right_eye_top_idx = 386
+        self.right_eye_bottom_idx = 374
 
         # Iris centers (available with refine_landmarks=True)
         self.left_iris_center_idx = 468
         self.right_iris_center_idx = 473
+        
+        # Eye aspect ratio threshold (eyes closed if below this)
+        self.eye_closed_threshold = 0.15
 
         # Thresholds for classification (used by AttentionLogic)
         self.yaw_on_threshold = 18.0      # degrees
@@ -147,6 +156,50 @@ class OrientationEstimator:
 
         return self._normalize(v)
 
+    def _are_eyes_closed(self, landmarks) -> bool:
+        """
+        Check if eyes are closed by measuring eye aspect ratio.
+        
+        :param landmarks: MediaPipe face_landmarks object.
+        :return: True if eyes are closed, False otherwise.
+        """
+        # Get vertical eye landmarks
+        left_eye_top = self._get_point(landmarks, self.left_eye_top_idx)
+        left_eye_bottom = self._get_point(landmarks, self.left_eye_bottom_idx)
+        right_eye_top = self._get_point(landmarks, self.right_eye_top_idx)
+        right_eye_bottom = self._get_point(landmarks, self.right_eye_bottom_idx)
+        
+        # Get horizontal eye landmarks for width
+        left_eye_inner = self._get_point(landmarks, self.left_eye_inner_idx)
+        left_eye_outer = self._get_point(landmarks, self.left_eye_outer_idx)
+        right_eye_inner = self._get_point(landmarks, self.right_eye_inner_idx)
+        right_eye_outer = self._get_point(landmarks, self.right_eye_outer_idx)
+        
+        if any(p is None for p in [left_eye_top, left_eye_bottom, right_eye_top, right_eye_bottom,
+                                     left_eye_inner, left_eye_outer, right_eye_inner, right_eye_outer]):
+            return False
+        
+        # Calculate eye aspect ratio for both eyes
+        left_eye_height = abs(left_eye_top[1] - left_eye_bottom[1])
+        left_eye_width = abs(left_eye_outer[0] - left_eye_inner[0])
+        
+        right_eye_height = abs(right_eye_top[1] - right_eye_bottom[1])
+        right_eye_width = abs(right_eye_outer[0] - right_eye_inner[0])
+        
+        # Prevent division by zero
+        if left_eye_width < 1e-6 or right_eye_width < 1e-6:
+            return False
+        
+        # Eye aspect ratio (height / width)
+        left_ear = left_eye_height / left_eye_width
+        right_ear = right_eye_height / right_eye_width
+        
+        # Average of both eyes
+        avg_ear = (left_ear + right_ear) / 2.0
+        
+        # Eyes are closed if ratio is below threshold
+        return avg_ear < self.eye_closed_threshold
+
     def compute(self, landmarks, frame_shape: tuple) -> Optional[Dict]:
         """
         Compute orientation and gaze information from facial landmarks.
@@ -163,6 +216,10 @@ class OrientationEstimator:
             return None
 
         try:
+            # ===== STEP 0: Check if eyes are closed =====
+            if self._are_eyes_closed(landmarks):
+                return None  # Treat closed eyes as no valid orientation
+            
             # ===== STEP 1: Extract Required Landmarks =====
             left_ear = self._get_point(landmarks, self.left_ear_idx)
             right_ear = self._get_point(landmarks, self.right_ear_idx)
@@ -277,20 +334,24 @@ class AttentionLogic:
     def __init__(
         self,
         # === Balanced thresholds ===
-        yaw_threshold: float = 12.0,         # ON עד 12° לכל צד
-        pitch_threshold: float = 15.0,       # ON עד 15°
-        iris_threshold: float = 0.035,       # ON – סטייה קטנה של העיניים
+        yaw_threshold: float = 10.0,         # ON עד 10° לכל צד (מחמיר)
+        pitch_threshold: float = 0.5,        # ON רק כמעט ישר (מאוד מחמיר!)
+        iris_threshold: float = 0.08,        # ON – סטייה קטנה של העיניים (מחמיר)
 
-        yaw_off_threshold: float = 21.0,     # OFF – הראש באמת יוצא הצידה
-        iris_off_threshold: float = 0.055,   # OFF – העיניים באמת בורחות
+        yaw_off_threshold: float = 15.0,     # OFF – הראש יוצא הצידה
+        pitch_up_off_threshold: float = 0.5, # OFF – מסתכל למעלה (רגיש במיוחד!)
+        pitch_down_off_threshold: float = 13.0, # OFF – מסתכל למטה (פחות רגיש)
+        iris_off_threshold: float = 0.12,    # OFF – העיניים בורחות
 
         # === Balanced smoothing ===
-        window_size: int = 8,                # 8 פריימים היסטוריה
+        window_size: int = 5,                # 5 פריימים היסטוריה (תגובה מהירה יותר)
     ):
         self.yaw_threshold = yaw_threshold
         self.pitch_threshold = pitch_threshold
         self.iris_threshold = iris_threshold
         self.yaw_off_threshold = yaw_off_threshold
+        self.pitch_up_off_threshold = pitch_up_off_threshold
+        self.pitch_down_off_threshold = pitch_down_off_threshold
         self.iris_off_threshold = iris_off_threshold
         self.window_size = window_size
 
@@ -319,26 +380,32 @@ class AttentionLogic:
         """
         # Determine raw state based on orientation
         if orientation is None:
-            raw_state = GazeState.UNKNOWN
+            # No face detected or eyes closed → treat as OFF_SCREEN
+            raw_state = GazeState.OFF_SCREEN
         else:
             yaw_angle = float(orientation.get("yaw_angle", 0.0))
             pitch_angle = float(orientation.get("pitch_angle", 0.0))
             iris_offset = float(orientation.get("iris_offset", 0.0))
 
-            # Check for ON_SCREEN condition (all must be true)
+            # Check for OFF_SCREEN condition FIRST (any can be true)
+            # This takes priority over ON_SCREEN
             if (
-                abs(yaw_angle) < self.yaw_threshold
-                and abs(pitch_angle) < self.pitch_threshold
-                and abs(iris_offset) < self.iris_threshold
-            ):
-                raw_state = GazeState.ON_SCREEN
-
-            # Check for OFF_SCREEN condition (any can be true)
-            elif (
                 abs(yaw_angle) > self.yaw_off_threshold
+                or pitch_angle > self.pitch_up_off_threshold  # Looking up (positive pitch)
+                or pitch_angle < -self.pitch_down_off_threshold  # Looking down (negative pitch)
                 or abs(iris_offset) > self.iris_off_threshold
             ):
                 raw_state = GazeState.OFF_SCREEN
+
+            # Check for ON_SCREEN condition (all must be true)
+            # For pitch, we need to check it's within a narrow range
+            elif (
+                abs(yaw_angle) < self.yaw_threshold
+                and pitch_angle > -self.pitch_threshold
+                and pitch_angle < self.pitch_threshold
+                and abs(iris_offset) < self.iris_threshold
+            ):
+                raw_state = GazeState.ON_SCREEN
 
             # Otherwise, it's in the uncertain zone
             else:
