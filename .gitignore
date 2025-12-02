@@ -20,3 +20,10 @@ data/videos/
 .idea/
 *.swp
 *.swo
+
+# Data
+data/
+
+# UV
+.uv/
+uv.lock
