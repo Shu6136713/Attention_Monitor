@@ -19,9 +19,7 @@ class HeadPoseEstimator:
         coordinate system (roughly centered at the nose).
         """
         # 3D model points of a generic face (in centimeters)
-        # These correspond to specific MediaPipe face mesh landmark indices
-        # Order: Nose tip, Chin, Left eye left corner, Right eye right corner,
-        #        Left mouth corner, Right mouth corner
+        # ORIGINAL MODEL - coordinates as they were initially
         self.model_points_3d = np.array([
             (0.0, 0.0, 0.0),             # Nose tip (index 1)
             (0.0, -6.3, -1.2),           # Chin (index 152)
