@@ -25,9 +25,9 @@ class StatsManager:
         GA Rate = (Total OFF_SCREEN frames / Total frames) × 100%
     
     Classification thresholds:
-        - < 10%: Focused (ממוקד) - User is highly focused on task
-        - 10-20%: Normal (רגיל) - User occasionally looks away for thinking
-        - > 20%: Distracted (מוטרד) - High cognitive load or discomfort
+        - < 10%: Focused - User is highly focused on task
+        - 10-20%: Normal - User occasionally looks away for thinking
+        - > 20%: Distracted - High cognitive load or discomfort
     """
     
     def __init__(self):
