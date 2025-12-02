@@ -33,15 +33,16 @@ def get_video_capture(video_path: Optional[str] = None) -> cv2.VideoCapture:
     return cap
 
 
-def run_face_mesh_demo(video_path: Optional[str] = None, window_title: str = "Face Mesh Debug") -> None:
+def run_face_mesh_demo(video_path: Optional[str] = None, window_title: str = "Face Mesh Debug", visualize_3d: bool = False) -> None:
     """
     Run a Face Mesh demo using MediaPipe on a video file or webcam.
     
     :param video_path: Optional path to a video file. If None, use the webcam.
     :param window_title: Title for the OpenCV display window.
+    :param visualize_3d: Whether to show 3D mesh visualization.
     """
     # Create video processor
-    processor = VideoProcessor()
+    processor = VideoProcessor(visualize_3d=visualize_3d)
     
     try:
         # Get video capture object (either from file or webcam)
@@ -66,11 +67,6 @@ def run_face_mesh_demo(video_path: Optional[str] = None, window_title: str = "Fa
             # Process the frame (detection + drawing)
             output = processor.process(frame)
             
-            # Temporary debug: print orientation and attention info
-            print(f"Orientation: {output.get('orientation')}")
-            print(f"Attention: {output.get('attention')}")
-            print("---")
-            
             # Display the frame with face mesh overlay
             cv2.imshow(window_title, frame)
             
@@ -88,6 +84,32 @@ def run_face_mesh_demo(video_path: Optional[str] = None, window_title: str = "Fa
         sys.exit(1)
     
     finally:
+        # Display statistics summary before cleanup
+        print("\n" + "="*60)
+        print("Attention Analysis Summary")
+        print("="*60)
+        
+        summary = processor.get_stats_summary()
+        
+        print(f"Total frames: {summary['total_frames']}")
+        print(f"Frames with gaze on-screen: {summary['on_screen_frames']}")
+        print(f"Frames with gaze aversion: {summary['off_screen_frames']}")
+        print(f"Frames with unknown state: {summary['unknown_frames']}")
+        print(f"\nGA Rate (Gaze Aversion Rate): {summary['ga_rate']:.2f}%")
+        print(f"\nAttention Status: {summary['attention_label']}")
+        
+        # Add interpretation
+        attention_level = summary['attention_level']
+        print("\nInterpretation:")
+        if attention_level.name == "FOCUSED":
+            print("  User was highly focused on task. Low cognitive load.")
+        elif attention_level.name == "NORMAL":
+            print("  User had normal attention. Occasional gaze aversion for thinking.")
+        else:  # DISTRACTED
+            print("  User was distracted. High cognitive load or discomfort.")
+        
+        print("="*60 + "\n")
+        
         # Clean up resources
         if 'cap' in locals():
             cap.release()
@@ -100,8 +122,14 @@ if __name__ == "__main__":
     # If a video path is passed as the first argument, use it.
     # Otherwise, fall back to the webcam.
     video_file = None
+    show_3d = False
     
-    if len(sys.argv) > 1:
-        video_file = sys.argv[1]
+    args = sys.argv[1:]
+    if "--3d" in args:
+        show_3d = True
+        args.remove("--3d")
     
-    run_face_mesh_demo(video_path=video_file)
+    if len(args) > 0:
+        video_file = args[0]
+    
+    run_face_mesh_demo(video_path=video_file, visualize_3d=show_3d)

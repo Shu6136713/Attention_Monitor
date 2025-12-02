@@ -334,17 +334,17 @@ class AttentionLogic:
     def __init__(
         self,
         # === Balanced thresholds ===
-        yaw_threshold: float = 10.0,         # ON עד 10° לכל צד (מחמיר)
-        pitch_threshold: float = 0.5,        # ON רק כמעט ישר (מאוד מחמיר!)
-        iris_threshold: float = 0.08,        # ON – סטייה קטנה של העיניים (מחמיר)
-
-        yaw_off_threshold: float = 15.0,     # OFF – הראש יוצא הצידה
-        pitch_up_off_threshold: float = 0.5, # OFF – מסתכל למעלה (רגיש במיוחד!)
-        pitch_down_off_threshold: float = 13.0, # OFF – מסתכל למטה (פחות רגיש)
-        iris_off_threshold: float = 0.12,    # OFF – העיניים בורחות
-
+        yaw_threshold: float = 20.0,
+        pitch_threshold: float = 15.0,
+        iris_threshold: float = 0.18,
+        
+        yaw_off_threshold: float = 30.0,
+        pitch_up_off_threshold: float = 20.0,
+        pitch_down_off_threshold: float = 20.0,
+        iris_off_threshold: float = 0.28,
+        
         # === Balanced smoothing ===
-        window_size: int = 5,                # 5 פריימים היסטוריה (תגובה מהירה יותר)
+        window_size: int = 5,
     ):
         self.yaw_threshold = yaw_threshold
         self.pitch_threshold = pitch_threshold
