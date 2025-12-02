@@ -22,13 +22,18 @@ class HeadPoseEstimator:
         # These correspond to specific MediaPipe face mesh landmark indices
         # Order: Nose tip, Chin, Left eye left corner, Right eye right corner,
         #        Left mouth corner, Right mouth corner
+        # Adjusted to match OpenCV/MediaPipe Coordinate System (Y is Down)
+        # Nose is (0,0,0)
+        # Chin is below nose -> Positive Y
+        # Eyes are above nose -> Negative Y
+        # Mouth is below nose -> Positive Y
         self.model_points_3d = np.array([
             (0.0, 0.0, 0.0),             # Nose tip (index 1)
-            (0.0, -6.3, -1.2),           # Chin (index 152)
-            (-4.3, 2.5, -1.7),           # Left eye left corner (index 33)
-            (4.3, 2.5, -1.7),            # Right eye right corner (index 263)
-            (-2.9, -2.5, -1.4),          # Left mouth corner (index 61)
-            (2.9, -2.5, -1.4)            # Right mouth corner (index 291)
+            (0.0, 6.3, -1.2),            # Chin (index 152) - was -6.3
+            (-4.3, -2.5, -1.7),          # Left eye left corner (index 33) - was 2.5
+            (4.3, -2.5, -1.7),           # Right eye right corner (index 263) - was 2.5
+            (-2.9, 2.5, -1.4),           # Left mouth corner (index 61) - was -2.5
+            (2.9, 2.5, -1.4)             # Right mouth corner (index 291) - was -2.5
         ], dtype=np.float64)
         
         # Corresponding MediaPipe Face Mesh landmark indices

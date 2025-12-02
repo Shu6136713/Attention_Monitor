@@ -9,6 +9,23 @@ wheels/
 # Virtual environments
 .venv
 
+# Testing and Linting
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
 # Video files
 data/videos/
 *.mp4
