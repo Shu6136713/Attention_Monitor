@@ -24,15 +24,18 @@ class VideoProcessor:
         self.face_detector = FaceMeshDetector()
         self.orientation_estimator = OrientationEstimator()
         self.head_pose_estimator = HeadPoseEstimator()
+        # Stricter Thresholds - more demanding attention detection
         self.attention_logic = AttentionLogic(
-            yaw_threshold=20.0,
-            pitch_threshold=15.0,
-            iris_threshold=0.18,
-            yaw_off_threshold=30.0,
-            pitch_up_off_threshold=20.0,
-            pitch_down_off_threshold=20.0,
-            iris_off_threshold=0.28,
-            window_size=5
+            yaw_threshold=10.0,           # Strict: only 10 degrees side movement allowed
+            pitch_threshold=10.0,         # Strict: only 10 degrees up/down movement allowed
+            iris_threshold=0.12,          # Very centered eyes required
+            
+            yaw_off_threshold=15.0,       # OFF if > 15 degrees
+            pitch_up_off_threshold=15.0,  # OFF if looking up > 15 degrees
+            pitch_down_off_threshold=15.0,# OFF if looking down > 15 degrees
+            iris_off_threshold=0.16,      # OFF if eyes move > 0.16
+            
+            window_size=5                 # Faster response (5 frames)
         )
         self.stats_manager = StatsManager()
         
@@ -42,8 +45,8 @@ class VideoProcessor:
         self.mesh_visualizer = MeshVisualizer() if visualize_3d else None
         
         # Calibration offsets (determined empirically based on user feedback)
-        # User reported Raw Pitch ~ 36 when looking straight. Subtracting to center at 0.
-        self.pitch_calibration_offset = -36.0
+        # User reported Raw Pitch ~ +38 when looking straight. Subtracting -38 to center at 0.
+        self.pitch_calibration_offset = -38.0
     
     def process(self, frame):
         """
@@ -79,11 +82,18 @@ class VideoProcessor:
             if orientation is not None and pose is not None:
                 pnp_yaw, pnp_pitch, pnp_roll = pose
                 
-                # Apply calibration offset
-                pnp_pitch += self.pitch_calibration_offset
+                # Fix Pitch flip: PnP sometimes returns negative values when it should be positive
+                # Two calibration modes based on Raw Pitch sign
+                raw_pitch = pose[1]
+                if raw_pitch < 0:
+                    # Mode 1: Raw Pitch is negative (around -31 when looking straight)
+                    pnp_pitch = raw_pitch + 31.0  # -31 + 31 = 0
+                else:
+                    # Mode 2: Raw Pitch is positive (around +38 when looking straight)
+                    pnp_pitch = raw_pitch + self.pitch_calibration_offset  # +38 - 38 = 0
                 
                 # DEBUG: Print raw values to understand why it fails
-                print(f"DEBUG -> Yaw: {pnp_yaw:.1f}, Pitch: {pnp_pitch:.1f} (Raw: {pose[1]:.1f}), Iris: {orientation.get('iris_offset', 0):.3f}")
+                print(f"DEBUG -> Yaw: {pnp_yaw:.1f}, Pitch: {pnp_pitch:.1f} (Raw: {raw_pitch:.1f}), Iris: {orientation.get('iris_offset', 0):.3f}")
                 
                 orientation["yaw_angle"] = pnp_yaw
                 orientation["pitch_angle"] = pnp_pitch
