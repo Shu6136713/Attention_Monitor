@@ -1,36 +1,44 @@
 # Attention Monitor
 
-## Project Description
-Attention Monitor is a Python-based application designed to monitor and analyze user attention levels using state-of-the-art computer vision techniques. By harnessing the capabilities of MediaPipe and OpenCV, this project aims to provide real-time feedback on attention levels, enhancing productivity and focus in various environments.
+## Project Overview
+This project implements a real-time **Gaze Detection System**. It leverages advanced computer vision techniques to track and analyze gaze movement, making it invaluable for applications in various fields such as user experience testing, marketing analysis, and accessibility solutions.
 
-## Technologies Used
-- Python 3.11
-- MediaPipe
-- OpenCV
-- NumPy
+## Idea Behind the Project
+The primary goal of the Attention Monitor is to determine where a user is looking in real-time. By integrating face mesh technology, we aim to provide insights into attention distribution, enabling further improvements in design and content delivery.
 
-## Project Structure
-- `src/`: Contains the main source code for the application.
-  - `main.py`: The main entry point of the application.
-  - `monitor.py`: Contains the logic for monitoring user attention.
-- `data/`: Directory for any datasets used in the training or evaluation phases.
-- `tests/`: Contains unit tests for the application to ensure functionality.
-- `README.md`: Documentation for the project.
+## Technology Stack
+- **Python 3.11**: The core programming language for developing the application.
+- **MediaPipe Face Mesh**: For detecting and tracking facial landmarks.
+- **OpenCV**: Utilized for image processing and manipulation.
+- **NumPy**: Helps with numerical operations and handling arrays.
 
-## How to Run the Application
-1. **Clone the repository**: 
-   ```bash
-   git clone https://github.com/Shu6136713/Attention_Monitor.git
-   cd Attention_Monitor
-   ```
-2. **Install dependencies**: 
-   Ensure you are using Python 3.11 and install the required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Run the application**: 
-   Execute the main script to start monitoring:
-   ```bash
-   python src/main.py
-   ```
-4. **Follow the on-screen instructions** to begin the attention monitoring process.
+## Architecture
+The architecture of the Attention Monitor consists of the following core modules:
+- **FaceMeshDetector**: Responsible for detecting the face and extracting mesh points.
+- **OrientationEstimator**: Analyzes the orientation of the user's face based on the detected mesh.
+- **HeadPoseEstimator**: Estimates head pose angles to infer gaze direction.
+- **AttentionLogic**: Integrates data from various modules to make decisions on attention metrics.
+- **VideoProcessor**: Handles video streams (both live and recorded) for real-time processing.
+
+## Installation
+To get started with the project, install the necessary dependencies using the `uv` package manager:
+```bash
+uv install mediapipe opencv-python numpy
+```
+
+## Running the Application
+You can run the application using either of the following:
+1. **Main Application (Online Demo)**:  Execute `main.py` to start the online demo.
+2. **Offline Mode**: Execute `main_offline.py` to run with a webcam or video file.
+
+## Configuration and Threshold Settings
+Configuration settings can be adjusted within the code to calibrate the gaze detection metrics. It's recommended to review comments in the code for optimal threshold selection based on user needs.
+
+## Demo
+Check out our online demo and visualize the system in action:
+- [Demo Video](https://link-to-demo-video.com)
+
+![Demo GIF](https://link-to-demo-gif.com/demo.gif)  
+
+## Conclusion
+The Attention Monitor project provides a robust foundation for understanding and analyzing gaze direction in real time. By utilizing modern technologies, it opens doors for improved engagement strategies in numerous domains.
