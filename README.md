@@ -1,44 +1,48 @@
 # Attention Monitor
 
-## Project Overview
-This project implements a real-time **Gaze Detection System**. It leverages advanced computer vision techniques to track and analyze gaze movement, making it invaluable for applications in various fields such as user experience testing, marketing analysis, and accessibility solutions.
+## Algorithm Explanation
+This project focuses on detecting yaw, pitch, and iris movements. The detection algorithms leverage deep learning techniques to analyze facial landmarks and compute the head pose from the input images. The yaw and pitch angles are calculated using vector math based on the detected points on the face, while iris detection involves identifying the location and position of the eyes using convolutional neural networks.
 
-## Idea Behind the Project
-The primary goal of the Attention Monitor is to determine where a user is looking in real-time. By integrating face mesh technology, we aim to provide insights into attention distribution, enabling further improvements in design and content delivery.
+## Demo GIF
+![Yaw, Pitch, Roll Detection](yaw pitch roll.gif)
 
-## Technology Stack
-- **Python 3.11**: The core programming language for developing the application.
-- **MediaPipe Face Mesh**: For detecting and tracking facial landmarks.
-- **OpenCV**: Utilized for image processing and manipulation.
-- **NumPy**: Helps with numerical operations and handling arrays.
+## Demo Video
+You can view the demo video [here](https://drive.google.com/your-video-link).
 
-## Architecture
-The architecture of the Attention Monitor consists of the following core modules:
-- **FaceMeshDetector**: Responsible for detecting the face and extracting mesh points.
-- **OrientationEstimator**: Analyzes the orientation of the user's face based on the detected mesh.
-- **HeadPoseEstimator**: Estimates head pose angles to infer gaze direction.
-- **AttentionLogic**: Integrates data from various modules to make decisions on attention metrics.
-- **VideoProcessor**: Handles video streams (both live and recorded) for real-time processing.
+## Detailed Architecture
+The architecture consists of several key components:
+- **Input Layer**: Captures the video feed.
+- **Preprocessing Module**: Normalizes and resizes frames before analysis.
+- **Detection Module**: Utilizes pre-trained models for detecting yaw, pitch, and iris.
+- **Output Layer**: Displays the results overlay on the video feed.
 
 ## Installation
-To get started with the project, install the necessary dependencies using the `uv` package manager:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Shu6136713/Attention_Monitor.git
+   cd Attention_Monitor
+   ```
+2. Install the necessary requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## How to Run
+To run the application, execute:
 ```bash
-uv install mediapipe opencv-python numpy
+python main.py
 ```
+Ensure your webcam is connected.
 
-## Running the Application
-You can run the application using either of the following:
-1. **Main Application (Online Demo)**:  Execute `main.py` to start the online demo.
-2. **Offline Mode**: Execute `main_offline.py` to run with a webcam or video file.
+## Configuration Options
+You can customize the following options in the `config.json` file:
+- `threshold`: Sensitivity of the detection (default: 0.5)
+- `model_path`: Path to the trained model (default: `models/face_model.h5`)
 
-## Configuration and Threshold Settings
-Configuration settings can be adjusted within the code to calibrate the gaze detection metrics. It's recommended to review comments in the code for optimal threshold selection based on user needs.
+## Future Improvements
+- Enhance the model's accuracy with more training data.
+- Optimize real-time processing performance.
+- Add support for different environments such as low light.
 
-## Demo
-Check out our online demo and visualize the system in action:
-- [Demo Video](https://link-to-demo-video.com)
-
-![Demo GIF](https://link-to-demo-gif.com/demo.gif)  
-
-## Conclusion
-The Attention Monitor project provides a robust foundation for understanding and analyzing gaze direction in real time. By utilizing modern technologies, it opens doors for improved engagement strategies in numerous domains.
+## Author
+Created by Shu6136713
